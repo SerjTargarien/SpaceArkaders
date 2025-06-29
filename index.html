@@ -206,6 +206,7 @@
             prevAPressed: false,
             prevStartPressed: false,
             prevSelectPressed: false,
+            prevBPressed: false,
 
             // Gamepad polling loop id
             inputLoopId: null,
@@ -974,10 +975,11 @@
             resumeGame();
         }
 
-        function isVisible(id) {
+       function isVisible(id) {
             const el = document.getElementById(id);
-            return el && el.style.display !== 'none';
-        }
+            if (!el) return false;
+            return window.getComputedStyle(el).display !== 'none';
+       }
         
         function updateUI() {
             document.getElementById('score').textContent = game.score;
@@ -1076,6 +1078,15 @@
                 }
             }
             game.prevAPressed = aPressed;
+
+            // B button cancels restart confirmation
+            const bPressed = gp.buttons[1] && gp.buttons[1].pressed;
+            if (bPressed && !game.prevBPressed) {
+                if (isVisible('restartConfirm')) {
+                    cancelRestart();
+                }
+            }
+            game.prevBPressed = bPressed;
 
             // Start button toggles pause
             const startPressed = gp.buttons[9] && gp.buttons[9].pressed;
