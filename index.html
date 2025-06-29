@@ -206,6 +206,10 @@
             reinforcements: 5,
             maxReinforcements: 5,
             alienDirection: 1, // 1 for right, -1 for left
+
+            // Purple alien spawn chances
+            purpleBaseChance: 0.001, // 0.1% base chance
+            purpleSpawnChance: 0.001,
             
 
             // High scores
@@ -390,6 +394,9 @@
                             game.bombs.push(new Bomb(alien.x, alien.y));
                         }
                         game.aliens.splice(i, 1);
+
+                        // Increase purple spawn chance for future reinforcements
+                        game.purpleSpawnChance += 1 / (50 + game.maxReinforcements * 10);
                         
                         // Bounce ball
                         this.velY = -this.velY;
@@ -666,8 +673,12 @@
             // Set level parameters - reduced speed increase
             game.alienSpeed = 0.15 + (game.level - 1) * 0.05; // Reduced from 0.1 to 0.05
             game.ballSpeed = 2.5 + (game.level - 1) * 0.1;
-            game.reinforcements = game.level * 5; // 5, 10, 15, 20... progression
+            game.maxReinforcements = game.level * 5; // store starting reinforcements
+            game.reinforcements = game.maxReinforcements; // remaining reinforcements
             game.alienDirection = 1; // Reset direction to right
+
+            // Reset purple alien spawn chance
+            game.purpleSpawnChance = game.purpleBaseChance;
 
             createAlienFormation();
             updateUI();
@@ -748,17 +759,21 @@
             for (let col = 0; col < game.alienCols; col++) {
                 let x = minX + col * spacingX;
 
-                // Weighted probabilities for alien types
+                // Weighted probabilities for alien types with dynamic purple chance
                 let r = Math.random();
                 let type;
-                if (r < 0.6) {
-                    type = 0; // Yellow 10-point alien
-                } else if (r < 0.85) {
-                    type = 1; // Green 20-point alien
-                } else if (r < 0.99) {
-                    type = 2; // Red 50-point alien
+                if (r < game.purpleSpawnChance) {
+                    type = 3; // Purple
                 } else {
-                    type = 3; // Purple 100-point alien (rarest)
+                    // Normalize remaining probability
+                    r = (r - game.purpleSpawnChance) / (1 - game.purpleSpawnChance);
+                    if (r < 60/99) {
+                        type = 0; // Yellow
+                    } else if (r < 85/99) {
+                        type = 1; // Green
+                    } else {
+                        type = 2; // Red
+                    }
                 }
 
                 game.aliens.push(new Alien(x, newRowY, type));
