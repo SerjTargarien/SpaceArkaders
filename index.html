@@ -132,6 +132,14 @@
             color: #ff00ff;
             border: 2px solid #ff00ff;
         }
+        #leaderboard {
+            margin-top: 15px;
+            color: #00ff00;
+        }
+        #leaderboard ol {
+            padding-left: 20px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -149,12 +157,16 @@
             <h2>GAME OVER</h2>
             <p>Final Score: <span id="finalScore">0</span></p>
             <button onclick="restartGame()">Play Again</button>
+            <div id="leaderboard">
+                <h3>High Scores</h3>
+                <ol id="highScoreList"></ol>
+            </div>
         </div>
         
         <div id="highScoreEntry">
             <h2>NEW HIGH SCORE!</h2>
             <p>Score: <span id="highScore">0</span></p>
-            <input type="text" id="playerName" maxlength="3" placeholder="ABC" />
+            <input type="text" id="playerName" maxlength="16" placeholder="NAME" />
             <br>
             <button onclick="saveHighScore()">Save Score</button>
         </div>
@@ -888,13 +900,14 @@
         
         function gameOver() {
             game.running = false;
-            
+
             // Check for high score
             if (isHighScore(game.score)) {
                 document.getElementById('highScore').textContent = game.score;
                 document.getElementById('highScoreEntry').style.display = 'block';
             } else {
                 document.getElementById('finalScore').textContent = game.score;
+                displayHighScores();
                 document.getElementById('gameOver').style.display = 'block';
             }
         }
@@ -943,13 +956,32 @@
         
         // High score system
         function loadHighScores() {
-            // Since localStorage is not available in artifacts, use in-memory storage
-            game.highScores = [];
+            let data = localStorage.getItem('spaceArkadersHighScores');
+            if (data) {
+                try {
+                    game.highScores = JSON.parse(data);
+                } catch (e) {
+                    game.highScores = [];
+                }
+            } else {
+                game.highScores = [];
+            }
+            displayHighScores();
         }
-        
+
         function saveHighScores() {
-            // Since localStorage is not available in artifacts, this is a no-op
-            // In a full implementation, this would save to localStorage
+            localStorage.setItem('spaceArkadersHighScores', JSON.stringify(game.highScores));
+        }
+
+        function displayHighScores() {
+            const list = document.getElementById('highScoreList');
+            if (!list) return;
+            list.innerHTML = '';
+            game.highScores.forEach(hs => {
+                const li = document.createElement('li');
+                li.textContent = `${hs.name} - ${hs.score}`;
+                list.appendChild(li);
+            });
         }
         
         function isHighScore(score) {
@@ -958,18 +990,19 @@
         
         function saveHighScore() {
             let name = document.getElementById('playerName').value.toUpperCase() || 'AAA';
-            
+
             game.highScores.push({
                 name: name,
                 score: game.score,
                 date: new Date().toLocaleDateString()
             });
-            
+
             game.highScores.sort((a, b) => b.score - a.score);
             game.highScores = game.highScores.slice(0, 10);
-            
+
             saveHighScores();
-            
+            displayHighScores();
+
             document.getElementById('highScoreEntry').style.display = 'none';
             document.getElementById('finalScore').textContent = game.score;
             document.getElementById('gameOver').style.display = 'block';
