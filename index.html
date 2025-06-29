@@ -956,17 +956,16 @@
         
         // High score system
         function loadHighScores() {
-            let data = localStorage.getItem('spaceArkadersHighScores');
-            if (data) {
-                try {
-                    game.highScores = JSON.parse(data);
-                } catch (e) {
+            fetch('scores.json')
+                .then(res => res.json())
+                .then(data => {
+                    game.highScores = Array.isArray(data) ? data : [];
+                    displayHighScores();
+                })
+                .catch(() => {
                     game.highScores = [];
-                }
-            } else {
-                game.highScores = [];
-            }
-            displayHighScores();
+                    displayHighScores();
+                });
         }
 
         function saveHighScores() {
@@ -991,21 +990,16 @@
         function saveHighScore() {
             let name = document.getElementById('playerName').value.toUpperCase() || 'AAA';
 
-            game.highScores.push({
-                name: name,
-                score: game.score,
-                date: new Date().toLocaleDateString()
-            });
-
-            game.highScores.sort((a, b) => b.score - a.score);
-            game.highScores = game.highScores.slice(0, 10);
-
-            saveHighScores();
-            displayHighScores();
-
-            document.getElementById('highScoreEntry').style.display = 'none';
-            document.getElementById('finalScore').textContent = game.score;
-            document.getElementById('gameOver').style.display = 'block';
+            fetch('/submit-score', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name, score: game.score })
+            }).then(() => {
+                loadHighScores();
+                document.getElementById('highScoreEntry').style.display = 'none';
+                document.getElementById('finalScore').textContent = game.score;
+                document.getElementById('gameOver').style.display = 'block';
+            }).catch(err => console.error(err));
         }
         
         // Main game loop
