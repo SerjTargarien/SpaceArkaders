@@ -96,7 +96,7 @@
             background: #00ff00;
             color: #000;
         }
-        
+
         #startScreen {
             position: absolute;
             top: 50%;
@@ -108,6 +108,29 @@
             border: 2px solid #00ff00;
             border-radius: 10px;
             text-align: center;
+        }
+
+        #pauseOverlay,
+        #restartConfirm {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+
+        #pauseOverlay {
+            color: #00ffff;
+            border: 2px solid #00ffff;
+        }
+
+        #restartConfirm {
+            color: #ff00ff;
+            border: 2px solid #ff00ff;
         }
     </style>
 </head>
@@ -141,6 +164,17 @@
             Use LEFT/RIGHT arrows or A/D to move paddle • Collect bombs to skip levels • Prevent aliens from reaching the bottom!
             <br>
             <button onclick="beginGame()">PLAY!</button>
+        </div>
+
+        <div id="pauseOverlay">
+            <h2>PAUSED</h2>
+            <button onclick="resumeGame()">Resume</button>
+        </div>
+
+        <div id="restartConfirm">
+            <h2>Restart Game?</h2>
+            <button onclick="confirmRestart()">Yes</button>
+            <button onclick="cancelRestart()">No</button>
         </div>
     </div>
 
@@ -485,9 +519,22 @@
             // Set up event listeners
             document.addEventListener('keydown', (e) => {
                 game.keys[e.key] = true;
-                if (e.key === ' ') {
+                const key = e.key.toLowerCase();
+                if (key === ' ') {
                     e.preventDefault();
                     if (!game.running) beginGame();
+                } else if (key === 'p') {
+                    e.preventDefault();
+                    if (game.paused) {
+                        resumeGame();
+                    } else if (game.running) {
+                        pauseGame();
+                    }
+                } else if (key === 'r') {
+                    e.preventDefault();
+                    if (game.running) {
+                        requestRestart();
+                    }
                 }
             });
             
@@ -501,6 +548,7 @@
 
         function startGame() {
             game.running = true;
+            game.paused = false;
             game.score = 0;
             game.lives = 3;
             game.level = 1;
@@ -724,7 +772,37 @@
         
         function restartGame() {
             document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('restartConfirm').style.display = 'none';
+            document.getElementById('pauseOverlay').style.display = 'none';
+            game.paused = false;
             startGame();
+        }
+
+        function pauseGame() {
+            if (!game.running || game.paused) return;
+            game.paused = true;
+            document.getElementById('pauseOverlay').style.display = 'block';
+        }
+
+        function resumeGame() {
+            if (!game.paused) return;
+            game.paused = false;
+            document.getElementById('pauseOverlay').style.display = 'none';
+        }
+
+        function requestRestart() {
+            if (!game.running) return;
+            game.paused = true;
+            document.getElementById('restartConfirm').style.display = 'block';
+        }
+
+        function confirmRestart() {
+            restartGame();
+        }
+
+        function cancelRestart() {
+            document.getElementById('restartConfirm').style.display = 'none';
+            resumeGame();
         }
         
         function updateUI() {
@@ -772,7 +850,12 @@
         // Main game loop
         function gameLoop() {
             if (!game.running) return;
-            
+
+            if (game.paused) {
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
             // Clear canvas
             game.ctx.clearRect(0, 0, game.width, game.height);
             
