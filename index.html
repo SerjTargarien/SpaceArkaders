@@ -97,13 +97,16 @@
             color: #000;
         }
         
-        #instructions {
+        #startScreen {
             position: absolute;
-            bottom: 10px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            color: #888;
-            font-size: 12px;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #00ff00;
+            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
             text-align: center;
         }
     </style>
@@ -134,8 +137,10 @@
             <button onclick="saveHighScore()">Save Score</button>
         </div>
         
-        <div id="instructions">
+        <div id="startScreen">
             Use LEFT/RIGHT arrows or A/D to move paddle • Collect bombs to skip levels • Prevent aliens from reaching the bottom!
+            <br>
+            <button onclick="beginGame()">PLAY!</button>
         </div>
     </div>
 
@@ -482,7 +487,7 @@
                 game.keys[e.key] = true;
                 if (e.key === ' ') {
                     e.preventDefault();
-                    if (!game.running) startGame();
+                    if (!game.running) beginGame();
                 }
             });
             
@@ -490,9 +495,10 @@
                 game.keys[e.key] = false;
             });
             
-            startGame();
+            // Show start screen on load
+            document.getElementById('startScreen').style.display = 'block';
         }
-        
+
         function startGame() {
             game.running = true;
             game.score = 0;
@@ -505,6 +511,11 @@
             
             resetLevel();
             gameLoop();
+        }
+
+        function beginGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            startGame();
         }
         
         function resetLevel() {
@@ -786,7 +797,7 @@
             requestAnimationFrame(gameLoop);
         }
         
-        // Start the game when page loads
+        // Initialize when page loads
         window.addEventListener('load', init);
     </script>
 </body>
