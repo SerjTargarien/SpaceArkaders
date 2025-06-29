@@ -235,6 +235,9 @@
             purpleSpawnChance: 0.001,
             killCounter: 0,
             maxKillCounter: 100,
+
+            // Extra life threshold
+            nextLifeScore: 5000,
             
 
             // High scores
@@ -417,6 +420,7 @@
                         
                         // Destroy alien
                         game.score += alien.points;
+                        checkExtraLife();
                         createParticles(alien.x + alien.width/2, alien.y + alien.height/2, alien.color);
                         if (alien.type === 3) {
                             game.bombs.push(new Bomb(alien.x, alien.y));
@@ -686,6 +690,7 @@
             game.score = 0;
             game.lives = 3;
             game.level = 1;
+            game.nextLifeScore = 5000;
             
             
             resetLevel();
@@ -873,6 +878,7 @@
             // Destroy all aliens and award fixed bonus points
             let bonusPoints = game.level * 100;
             game.score += bonusPoints;
+            checkExtraLife();
             
             // Create explosion particles
             game.aliens.forEach(alien => {
@@ -910,12 +916,6 @@
         }
         
         function nextLevel() {
-            // Bonus life if no lives lost this level
-            let livesAtStart = 3; // You'd track this properly in a full implementation
-            if (game.lives === livesAtStart) {
-                game.lives = Math.min(9, game.lives + 1);
-            }
-            
             game.level++;
             resetLevel();
         }
@@ -986,6 +986,15 @@
             document.getElementById('level').textContent = game.level;
             document.getElementById('lives').textContent = game.lives;
             document.getElementById('reinforcements').textContent = game.reinforcements;
+        }
+
+        function checkExtraLife() {
+            while (game.score >= game.nextLifeScore) {
+                if (game.lives < 9) {
+                    game.lives++;
+                }
+                game.nextLifeScore += 5000;
+            }
         }
         
         // High score system
