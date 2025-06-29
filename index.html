@@ -953,6 +953,11 @@
             document.getElementById('restartConfirm').style.display = 'none';
             resumeGame();
         }
+
+        function isVisible(id) {
+            const el = document.getElementById(id);
+            return el && el.style.display !== 'none';
+        }
         
         function updateUI() {
             document.getElementById('score').textContent = game.score;
@@ -1027,14 +1032,24 @@
                 game.padAxisX = axis;
             }
 
-            // D-pad updates
-            if (gp.buttons[14]) game.keys['ArrowLeft'] = game.keys['ArrowLeft'] || gp.buttons[14].pressed;
-            if (gp.buttons[15]) game.keys['ArrowRight'] = game.keys['ArrowRight'] || gp.buttons[15].pressed;
+            // D-pad updates - assign directly so release is detected
+            game.keys['ArrowLeft'] = !!(gp.buttons[14] && gp.buttons[14].pressed);
+            game.keys['ArrowRight'] = !!(gp.buttons[15] && gp.buttons[15].pressed);
 
-            // A button launches the ball / starts game
+            // A button interacts with menus or launches the ball / starts game
             const aPressed = gp.buttons[0] && gp.buttons[0].pressed;
             if (aPressed && !game.prevAPressed) {
-                if (!game.running) {
+                if (isVisible('startScreen')) {
+                    beginGame();
+                } else if (isVisible('highScoreEntry')) {
+                    saveHighScore();
+                } else if (isVisible('gameOver')) {
+                    restartGame();
+                } else if (isVisible('pauseOverlay')) {
+                    resumeGame();
+                } else if (isVisible('restartConfirm')) {
+                    confirmRestart();
+                } else if (!game.running) {
                     beginGame();
                 } else if (game.ball && game.ball.attached && !game.paused) {
                     game.ball.launch();
