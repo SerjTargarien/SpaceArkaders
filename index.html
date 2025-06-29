@@ -407,8 +407,10 @@
                     let dx = this.x - (bomb.x + bomb.width/2);
                     let dy = this.y - (bomb.y + bomb.height/2);
                     if (Math.sqrt(dx*dx + dy*dy) < this.radius + 15) {
-                        collectBomb(i);
-                        break;
+                        if (Date.now() - bomb.spawnTime >= 1000) {
+                            collectBomb(i);
+                            break;
+                        }
                     }
                 }
             }
@@ -499,6 +501,7 @@
                 this.height = 25;
                 this.velY = 1;
                 this.rotation = 0;
+                this.spawnTime = Date.now();
             }
             
             update() {
