@@ -210,6 +210,8 @@
             // Purple alien spawn chances
             purpleBaseChance: 0.001, // 0.1% base chance
             purpleSpawnChance: 0.001,
+            killCounter: 0,
+            maxKillCounter: 100,
             
 
             // High scores
@@ -395,8 +397,10 @@
                         }
                         game.aliens.splice(i, 1);
 
-                        // Increase purple spawn chance for future reinforcements
-                        game.purpleSpawnChance += 1 / (50 + game.maxReinforcements * 10);
+                        // Update kill counter and purple spawn chance
+                        game.killCounter = Math.min(game.killCounter + 1, game.maxKillCounter);
+                        let progress = game.killCounter / game.maxKillCounter;
+                        game.purpleSpawnChance = game.purpleBaseChance + progress * (0.10 - game.purpleBaseChance);
                         
                         // Bounce ball
                         this.velY = -this.velY;
@@ -677,7 +681,9 @@
             game.reinforcements = game.maxReinforcements; // remaining reinforcements
             game.alienDirection = 1; // Reset direction to right
 
-            // Reset purple alien spawn chance
+            // Reset purple alien spawn chance and kill counter
+            game.killCounter = 0;
+            game.maxKillCounter = 50 + game.maxReinforcements * 10;
             game.purpleSpawnChance = game.purpleBaseChance;
 
             createAlienFormation();
