@@ -116,8 +116,8 @@
             <div>Score: <span id="score">0</span></div>
             <div>Level: <span id="level">1</span></div>
             <div>Lives: <span id="lives">3</span></div>
-            <div>Reinforcements: <span id="reinforcements">0</span></div>
-            <div id="bombStatus">Next Bomb: <span id="nextBomb">1000</span></div>
+            <div>Reinforcements: <span id="reinforcements">5</span></div>
+            <div id="bombStatus">Next Bomb: <span id="nextBomb">500</span></div>
         </div>
         
         <div id="gameOver">
@@ -165,13 +165,13 @@
             alienCols: 10,
             alienSpeed: 0.15, // Reduced from 0.3 to 0.15
             ballSpeed: 2.5,
-            reinforcements: 3,
-            maxReinforcements: 3,
+            reinforcements: 5,
+            maxReinforcements: 5,
             alienDirection: 1, // 1 for right, -1 for left
             
             // Bomb system
-            bombThreshold: 1000,
-            nextBombScore: 1000,
+            bombThreshold: 500,
+            nextBombScore: 500,
             bombAvailable: false,
             
             // High scores
