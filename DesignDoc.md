@@ -136,7 +136,11 @@ To complete a level, the player must:
 
 🖼️ Visuals and UI Feedback
 
-    Aliens are visually differentiated by color or style, with higher-value aliens being visually distinct.
+    Aliens are visually differentiated by color. The point values and hues are:
+        • Yellow – 10 points (most common)
+        • Green – 20 points (less common)
+        • Red – 50 points (uncommon)
+        • Purple – 100 points (rarest)
 
     Visual effects should accompany:
 
