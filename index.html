@@ -206,6 +206,12 @@
             prevAPressed: false,
             prevStartPressed: false,
             prevSelectPressed: false,
+
+            // Gamepad polling loop id
+            inputLoopId: null,
+
+            // Flag to stop the old game loop when restarting
+            restartPending: false,
             
             // Game objects
             paddle: null,
@@ -658,12 +664,20 @@
             
             // Show start screen on load
             document.getElementById('startScreen').style.display = 'block';
+
+            // Begin polling for gamepad input on the menu
+            inputLoop();
         }
 
         function startGame() {
             if (game.loopId !== null) {
                 cancelAnimationFrame(game.loopId);
                 game.loopId = null;
+            }
+
+            if (game.inputLoopId !== null) {
+                cancelAnimationFrame(game.inputLoopId);
+                game.inputLoopId = null;
             }
 
             game.running = true;
@@ -917,6 +931,11 @@
                 displayHighScores();
                 document.getElementById('gameOver').style.display = 'block';
             }
+
+            // Start polling for gamepad input on menus
+            if (!game.inputLoopId) {
+                inputLoop();
+            }
         }
         
         function restartGame() {
@@ -924,6 +943,7 @@
             document.getElementById('restartConfirm').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
             game.paused = false;
+            game.restartPending = true;
             startGame();
         }
 
@@ -1078,11 +1098,26 @@
             game.prevSelectPressed = selectPressed;
         }
 
+        // Poll gamepad even when the game is not running
+        function inputLoop() {
+            updateGamepadInput();
+            if (!game.running) {
+                game.inputLoopId = requestAnimationFrame(inputLoop);
+            } else {
+                game.inputLoopId = null;
+            }
+        }
+
         // Main game loop
         function gameLoop() {
             if (!game.running) return;
 
             updateGamepadInput();
+
+            if (game.restartPending) {
+                game.restartPending = false;
+                return;
+            }
 
             if (game.paused) {
                 game.loopId = requestAnimationFrame(gameLoop);
