@@ -402,10 +402,22 @@
                 
                 // Different alien types with different points and colors
                 switch(type) {
-                    case 0: this.points = 10; this.color = '#ff0000'; break;
-                    case 1: this.points = 20; this.color = '#ff8800'; break;
-                    case 2: this.points = 50; this.color = '#ffff00'; break;
-                    default: this.points = 100; this.color = '#ff00ff'; break;
+                    case 0: // common, low value
+                        this.points = 10;
+                        this.color = '#ffff00'; // yellow
+                        break;
+                    case 1: // slightly less common
+                        this.points = 20;
+                        this.color = '#00ff00'; // green
+                        break;
+                    case 2: // uncommon
+                        this.points = 50;
+                        this.color = '#ff0000'; // red
+                        break;
+                    default: // rarest
+                        this.points = 100;
+                        this.color = '#ff00ff'; // purple
+                        break;
                 }
             }
             
@@ -624,7 +636,8 @@
                 for (let col = 0; col < game.alienCols; col++) {
                     let x = startX + col * spacingX;
                     let y = startY + row * spacingY;
-                    let type = Math.floor(row / 2); // Different types per row pair
+                    // Rows 0-1: yellow, 2-3: green, last row: red
+                    let type = Math.floor(row / 2);
                     game.aliens.push(new Alien(x, y, type));
                 }
             }
@@ -697,13 +710,13 @@
                 let r = Math.random();
                 let type;
                 if (r < 0.6) {
-                    type = 0; // 10 point alien is common
+                    type = 0; // Yellow 10-point alien
                 } else if (r < 0.85) {
-                    type = 1; // 20 point alien
-                } else if (r < 0.97) {
-                    type = 2; // 50 point alien
+                    type = 1; // Green 20-point alien
+                } else if (r < 0.99) {
+                    type = 2; // Red 50-point alien
                 } else {
-                    type = 3; // 100 point alien is rare
+                    type = 3; // Purple 100-point alien (rarest)
                 }
 
                 game.aliens.push(new Alien(x, newRowY, type));
