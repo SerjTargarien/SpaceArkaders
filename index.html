@@ -238,19 +238,25 @@
                 this.y = y;
                 this.width = 100;
                 this.height = 12;
-                this.speed = 6;
+                this.maxSpeed = 6;
+                this.acceleration = 0.5;
                 this.velX = 0;
             }
             
             update() {
                 if (game.keys['ArrowLeft']) {
-                    this.velX = -this.speed;
+                    this.velX -= this.acceleration;
                 } else if (game.keys['ArrowRight']) {
-                    this.velX = this.speed;
+                    this.velX += this.acceleration;
                 } else {
                     this.velX *= 0.8; // Deceleration
+                    if (Math.abs(this.velX) < 0.1) this.velX = 0;
                 }
-                
+
+                // Clamp to maximum speed
+                if (this.velX > this.maxSpeed) this.velX = this.maxSpeed;
+                if (this.velX < -this.maxSpeed) this.velX = -this.maxSpeed;
+
                 this.x += this.velX;
                 
                 // Bounds checking
