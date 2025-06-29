@@ -202,6 +202,10 @@
             lives: 3,
             level: 1,
             keys: {},
+            padAxisX: 0,
+            prevAPressed: false,
+            prevStartPressed: false,
+            prevSelectPressed: false,
             
             // Game objects
             paddle: null,
@@ -262,7 +266,10 @@
             }
             
             update() {
-                if (game.keys['ArrowLeft']) {
+                if (Math.abs(game.padAxisX) > 0) {
+                    const curve = Math.sign(game.padAxisX) * game.padAxisX * game.padAxisX;
+                    this.velX = curve * this.maxSpeed;
+                } else if (game.keys['ArrowLeft']) {
                     this.velX -= this.acceleration;
                 } else if (game.keys['ArrowRight']) {
                     this.velX += this.acceleration;
@@ -1007,10 +1014,60 @@
             document.getElementById('finalScore').textContent = game.score;
             document.getElementById('gameOver').style.display = 'block';
         }
-        
+
+        function updateGamepadInput() {
+            const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+            const gp = pads[0];
+            game.padAxisX = 0;
+            if (!gp) return;
+
+            // Analog stick
+            let axis = gp.axes[0] || 0;
+            if (Math.abs(axis) > 0.15) {
+                game.padAxisX = axis;
+            }
+
+            // D-pad updates
+            if (gp.buttons[14]) game.keys['ArrowLeft'] = game.keys['ArrowLeft'] || gp.buttons[14].pressed;
+            if (gp.buttons[15]) game.keys['ArrowRight'] = game.keys['ArrowRight'] || gp.buttons[15].pressed;
+
+            // A button launches the ball / starts game
+            const aPressed = gp.buttons[0] && gp.buttons[0].pressed;
+            if (aPressed && !game.prevAPressed) {
+                if (!game.running) {
+                    beginGame();
+                } else if (game.ball && game.ball.attached && !game.paused) {
+                    game.ball.launch();
+                }
+            }
+            game.prevAPressed = aPressed;
+
+            // Start button toggles pause
+            const startPressed = gp.buttons[9] && gp.buttons[9].pressed;
+            if (startPressed && !game.prevStartPressed) {
+                if (game.paused) {
+                    resumeGame();
+                } else if (game.running) {
+                    pauseGame();
+                }
+            }
+            game.prevStartPressed = startPressed;
+
+            // Select button requests restart
+            const selectPressed = gp.buttons[8] && gp.buttons[8].pressed;
+            if (selectPressed && !game.prevSelectPressed) {
+                if (game.running) {
+                    requestRestart();
+                }
+            }
+            game.prevSelectPressed = selectPressed;
+        }
+
         // Main game loop
         function gameLoop() {
             if (!game.running) return;
+
+            updateGamepadInput();
 
             if (game.paused) {
                 game.loopId = requestAnimationFrame(gameLoop);
