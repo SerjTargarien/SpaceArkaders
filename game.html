@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Arkaders - Playtest</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+        }
+        
+        #gameContainer {
+            border: 2px solid #00ff00;
+            position: relative;
+            background: #001100;
+        }
+        
+        canvas {
+            display: block;
+            background: linear-gradient(180deg, #000033 0%, #000000 100%);
+        }
+        
+        #ui {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            height: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #00ffff;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0 10px;
+            border-radius: 3px;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #ff0000;
+            padding: 20px;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        
+        #highScoreEntry {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #ffff00;
+            padding: 20px;
+            border: 2px solid #ffff00;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+        
+        input {
+            background: #000;
+            color: #ffff00;
+            border: 1px solid #ffff00;
+            padding: 5px;
+            margin: 10px;
+            text-align: center;
+            font-family: inherit;
+        }
+        
+        button {
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #888;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div id="ui">
+            <div>Score: <span id="score">0</span></div>
+            <div>Level: <span id="level">1</span></div>
+            <div>Lives: <span id="lives">3</span></div>
+            <div>Reinforcements: <span id="reinforcements">0</span></div>
+            <div id="bombStatus">Next Bomb: <span id="nextBomb">1000</span></div>
+        </div>
+        
+        <div id="gameOver">
+            <h2>GAME OVER</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
+        
+        <div id="highScoreEntry">
+            <h2>NEW HIGH SCORE!</h2>
+            <p>Score: <span id="highScore">0</span></p>
+            <input type="text" id="playerName" maxlength="3" placeholder="ABC" />
+            <br>
+            <button onclick="saveHighScore()">Save Score</button>
+        </div>
+        
+        <div id="instructions">
+            Use LEFT/RIGHT arrows or A/D to move paddle • Collect bombs to skip levels • Prevent aliens from reaching the bottom!
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let game = {
+            canvas: null,
+            ctx: null,
+            width: 800,
+            height: 600,
+            running: false,
+            paused: false,
+            score: 0,
+            lives: 3,
+            level: 1,
+            keys: {},
+            
+            // Game objects
+            paddle: null,
+            ball: null,
+            aliens: [],
+            bombs: [],
+            particles: [],
+            
+            // Level settings
+            alienRows: 5,
+            alienCols: 10,
+            alienSpeed: 0.15, // Reduced from 0.3 to 0.15
+            ballSpeed: 2.5,
+            reinforcements: 3,
+            maxReinforcements: 3,
+            alienDirection: 1, // 1 for right, -1 for left
+            
+            // Bomb system
+            bombThreshold: 1000,
+            nextBombScore: 1000,
+            bombAvailable: false,
+            
+            // High scores
+            highScores: []
+        };
+        
+        // Paddle class
+        class Paddle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 100;
+                this.height = 12;
+                this.speed = 6;
+                this.velX = 0;
+            }
+            
+            update() {
+                if (game.keys['ArrowLeft'] || game.keys['a']) {
+                    this.velX = -this.speed;
+                } else if (game.keys['ArrowRight'] || game.keys['d']) {
+                    this.velX = this.speed;
+                } else {
+                    this.velX *= 0.8; // Deceleration
+                }
+                
+                this.x += this.velX;
+                
+                // Bounds checking
+                if (this.x < 0) {
+                    this.x = 0;
+                    this.velX = 0;
+                }
+                if (this.x + this.width > game.width) {
+                    this.x = game.width - this.width;
+                    this.velX = 0;
+                }
+            }
+            
+            draw() {
+                game.ctx.fillStyle = '#00ff00';
+                game.ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Add glow effect
+                game.ctx.shadowColor = '#00ff00';
+                game.ctx.shadowBlur = 10;
+                game.ctx.fillRect(this.x, this.y, this.width, this.height);
+                game.ctx.shadowBlur = 0;
+            }
+        }
+        
+        // Ball class
+        class Ball {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 6;
+                this.velX = 2;
+                this.velY = -2.5;
+                this.trail = [];
+            }
+            
+            update() {
+                // Store trail positions
+                this.trail.push({x: this.x, y: this.y});
+                if (this.trail.length > 8) {
+                    this.trail.shift();
+                }
+                
+                this.x += this.velX;
+                this.y += this.velY;
+                
+                // Wall collisions
+                if (this.x - this.radius <= 0 || this.x + this.radius >= game.width) {
+                    this.velX = -this.velX;
+                    this.x = Math.max(this.radius, Math.min(game.width - this.radius, this.x));
+                    createParticles(this.x, this.y, '#ffffff');
+                }
+                
+                if (this.y - this.radius <= 40) { // Account for UI
+                    this.velY = -this.velY;
+                    this.y = 40 + this.radius;
+                    createParticles(this.x, this.y, '#ffffff');
+                }
+                
+                // Paddle collision
+                if (this.y + this.radius >= game.paddle.y && 
+                    this.y - this.radius <= game.paddle.y + game.paddle.height &&
+                    this.x >= game.paddle.x && 
+                    this.x <= game.paddle.x + game.paddle.width) {
+                    
+                    // Calculate bounce angle based on paddle position and movement
+                    let hitPos = (this.x - game.paddle.x) / game.paddle.width;
+                    let bounceAngle = (hitPos - 0.5) * Math.PI * 0.5;
+                    
+                    let speed = Math.sqrt(this.velX * this.velX + this.velY * this.velY);
+                    this.velX = Math.sin(bounceAngle) * speed + game.paddle.velX * 0.2;
+                    this.velY = -Math.abs(Math.cos(bounceAngle) * speed);
+                    
+                    this.y = game.paddle.y - this.radius;
+                    createParticles(this.x, this.y, '#00ff00');
+                }
+                
+                // Check if ball is lost
+                if (this.y > game.height) {
+                    loseLife();
+                }
+                
+                // Alien collisions
+                for (let i = game.aliens.length - 1; i >= 0; i--) {
+                    let alien = game.aliens[i];
+                    if (this.x + this.radius >= alien.x && 
+                        this.x - this.radius <= alien.x + alien.width &&
+                        this.y + this.radius >= alien.y && 
+                        this.y - this.radius <= alien.y + alien.height) {
+                        
+                        // Destroy alien
+                        game.score += alien.points;
+                        createParticles(alien.x + alien.width/2, alien.y + alien.height/2, alien.color);
+                        game.aliens.splice(i, 1);
+                        
+                        // Bounce ball
+                        this.velY = -this.velY;
+                        
+                        // Check for level completion
+                        if (game.aliens.length === 0 && game.reinforcements === 0) {
+                            nextLevel();
+                        }
+                        
+                        break;
+                    }
+                }
+                
+                // Bomb collisions
+                for (let i = game.bombs.length - 1; i >= 0; i--) {
+                    let bomb = game.bombs[i];
+                    let dx = this.x - (bomb.x + bomb.width/2);
+                    let dy = this.y - (bomb.y + bomb.height/2);
+                    if (Math.sqrt(dx*dx + dy*dy) < this.radius + 15) {
+                        collectBomb(i);
+                        break;
+                    }
+                }
+            }
+            
+            draw() {
+                // Draw trail
+                for (let i = 0; i < this.trail.length; i++) {
+                    let alpha = (i + 1) / this.trail.length * 0.3;
+                    game.ctx.globalAlpha = alpha;
+                    game.ctx.fillStyle = '#ffffff';
+                    game.ctx.beginPath();
+                    game.ctx.arc(this.trail[i].x, this.trail[i].y, this.radius * alpha, 0, Math.PI * 2);
+                    game.ctx.fill();
+                }
+                
+                game.ctx.globalAlpha = 1;
+                
+                // Draw ball
+                game.ctx.fillStyle = '#ffffff';
+                game.ctx.shadowColor = '#ffffff';
+                game.ctx.shadowBlur = 15;
+                game.ctx.beginPath();
+                game.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                game.ctx.fill();
+                game.ctx.shadowBlur = 0;
+            }
+        }
+        
+        // Alien class
+        class Alien {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.width = 30;
+                this.height = 20;
+                this.type = type;
+                this.animFrame = 0;
+                
+                // Different alien types with different points and colors
+                switch(type) {
+                    case 0: this.points = 10; this.color = '#ff0000'; break;
+                    case 1: this.points = 20; this.color = '#ff8800'; break;
+                    case 2: this.points = 30; this.color = '#ffff00'; break;
+                    default: this.points = 40; this.color = '#ff00ff'; break;
+                }
+            }
+            
+            update() {
+                this.animFrame += 0.1;
+            }
+            
+            draw() {
+                game.ctx.fillStyle = this.color;
+                game.ctx.shadowColor = this.color;
+                game.ctx.shadowBlur = 5;
+                
+                // Simple animated alien shape
+                let pulse = Math.sin(this.animFrame) * 2;
+                game.ctx.fillRect(this.x, this.y + pulse, this.width, this.height);
+                
+                // Eyes
+                game.ctx.fillStyle = '#ffffff';
+                game.ctx.fillRect(this.x + 6, this.y + 4 + pulse, 4, 4);
+                game.ctx.fillRect(this.x + 20, this.y + 4 + pulse, 4, 4);
+                
+                game.ctx.shadowBlur = 0;
+            }
+        }
+        
+        // Bomb class
+        class Bomb {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 25;
+                this.height = 25;
+                this.velY = 1;
+                this.rotation = 0;
+            }
+            
+            update() {
+                this.y += this.velY;
+                this.rotation += 0.1;
+                
+                // Paddle collision
+                if (this.y + this.height >= game.paddle.y && 
+                    this.y <= game.paddle.y + game.paddle.height &&
+                    this.x + this.width >= game.paddle.x && 
+                    this.x <= game.paddle.x + game.paddle.width) {
+                    
+                    // Find this bomb's index and collect it
+                    let index = game.bombs.indexOf(this);
+                    if (index !== -1) {
+                        collectBomb(index);
+                    }
+                }
+                
+                // Remove if off screen
+                if (this.y > game.height) {
+                    let index = game.bombs.indexOf(this);
+                    if (index !== -1) {
+                        game.bombs.splice(index, 1);
+                        // Bomb was missed, set next bomb to appear in 200 points
+                        game.nextBombScore = game.score + 200;
+                    }
+                }
+            }
+            
+            draw() {
+                game.ctx.save();
+                game.ctx.translate(this.x + this.width/2, this.y + this.height/2);
+                game.ctx.rotate(this.rotation);
+                
+                game.ctx.fillStyle = '#ffff00';
+                game.ctx.shadowColor = '#ffff00';
+                game.ctx.shadowBlur = 10;
+                game.ctx.fillRect(-this.width/2, -this.height/2, this.width, this.height);
+                
+                // Bomb symbol
+                game.ctx.fillStyle = '#000000';
+                game.ctx.fillRect(-8, -3, 16, 6);
+                game.ctx.fillRect(-3, -8, 6, 16);
+                
+                game.ctx.restore();
+                game.ctx.shadowBlur = 0;
+            }
+        }
+        
+        // Particle class
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.velX = (Math.random() - 0.5) * 6;
+                this.velY = (Math.random() - 0.5) * 6;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.01;
+                this.color = color;
+                this.size = Math.random() * 3 + 1;
+            }
+            
+            update() {
+                this.x += this.velX;
+                this.y += this.velY;
+                this.velY += 0.1; // Gravity
+                this.life -= this.decay;
+            }
+            
+            draw() {
+                game.ctx.globalAlpha = this.life;
+                game.ctx.fillStyle = this.color;
+                game.ctx.fillRect(this.x, this.y, this.size, this.size);
+                game.ctx.globalAlpha = 1;
+            }
+        }
+        
+        // Initialize game
+        function init() {
+            game.canvas = document.getElementById('gameCanvas');
+            game.ctx = game.canvas.getContext('2d');
+            
+            // Load high scores
+            loadHighScores();
+            
+            // Set up event listeners
+            document.addEventListener('keydown', (e) => {
+                game.keys[e.key] = true;
+                if (e.key === ' ') {
+                    e.preventDefault();
+                    if (!game.running) startGame();
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                game.keys[e.key] = false;
+            });
+            
+            startGame();
+        }
+        
+        function startGame() {
+            game.running = true;
+            game.score = 0;
+            game.lives = 3;
+            game.level = 1;
+            
+            // Reset bomb system for level 1
+            game.bombThreshold = 500; // First bomb at 500 points in level 1
+            game.nextBombScore = 500;
+            
+            resetLevel();
+            gameLoop();
+        }
+        
+        function resetLevel() {
+            // Clear existing game objects
+            game.aliens = [];
+            game.bombs = [];
+            game.particles = [];
+            
+            // Create paddle
+            game.paddle = new Paddle(game.width/2 - 50, game.height - 30);
+            
+            // Create ball
+            game.ball = new Ball(game.width/2, game.height - 60);
+            
+            // Set level parameters - reduced speed increase
+            game.alienSpeed = 0.15 + (game.level - 1) * 0.05; // Reduced from 0.1 to 0.05
+            game.ballSpeed = 2.5 + (game.level - 1) * 0.1;
+            game.reinforcements = game.level * 5; // 5, 10, 15, 20... progression
+            game.alienDirection = 1; // Reset direction to right
+            
+            // Set bomb threshold for this level
+            if (game.level === 1) {
+                game.bombThreshold = 500;
+                game.nextBombScore = Math.max(game.nextBombScore, game.score + 500);
+            } else {
+                game.bombThreshold = game.level * 500; // Level 2: 1000, Level 3: 1500, etc.
+                game.nextBombScore = Math.max(game.nextBombScore, game.score + game.bombThreshold);
+            }
+            
+            createAlienFormation();
+            updateUI();
+        }
+        
+        function createAlienFormation() {
+            let startX = 100;
+            let startY = 80;
+            let spacingX = 60;
+            let spacingY = 35;
+            
+            for (let row = 0; row < game.alienRows; row++) {
+                for (let col = 0; col < game.alienCols; col++) {
+                    let x = startX + col * spacingX;
+                    let y = startY + row * spacingY;
+                    let type = Math.floor(row / 2); // Different types per row pair
+                    game.aliens.push(new Alien(x, y, type));
+                }
+            }
+        }
+        
+        function updateAliens() {
+            if (game.aliens.length === 0) return;
+            
+            let shouldMoveDown = false;
+            
+            // Check if any alien has hit the screen edge
+            for (let alien of game.aliens) {
+                if ((game.alienDirection > 0 && alien.x + alien.width >= game.width) ||
+                    (game.alienDirection < 0 && alien.x <= 0)) {
+                    shouldMoveDown = true;
+                    break;
+                }
+            }
+            
+            if (shouldMoveDown) {
+                // Move all aliens down and reverse direction
+                game.aliens.forEach(alien => {
+                    alien.y += 20; // Move down by a fixed amount
+                    
+                    // Check if aliens reached paddle
+                    if (alien.y + alien.height >= game.paddle.y) {
+                        gameOver();
+                        return;
+                    }
+                });
+                
+                // Reverse direction
+                game.alienDirection *= -1;
+                
+                // Add reinforcements if available
+                if (game.reinforcements > 0) {
+                    addReinforcementRow();
+                    game.reinforcements--;
+                }
+            } else {
+                // Move aliens horizontally
+                game.aliens.forEach(alien => {
+                    alien.x += game.alienSpeed * game.alienDirection;
+                    alien.update();
+                });
+            }
+        }
+        
+        function addReinforcementRow() {
+            // Find the topmost alien to determine where to place the new row
+            if (game.aliens.length === 0) return;
+            
+            let topY = Math.min(...game.aliens.map(a => a.y));
+            let newRowY = topY - 35; // Place new row above existing aliens
+            
+            // Find the leftmost and rightmost positions of current aliens
+            let leftmostX = Math.min(...game.aliens.map(a => a.x));
+            let rightmostX = Math.max(...game.aliens.map(a => a.x + a.width));
+            
+            // Calculate the total width available for the new row
+            let availableWidth = rightmostX - leftmostX;
+            let spacingX = availableWidth / (game.alienCols - 1);
+            
+            // Create a full row of aliens aligned with current alien positions
+            for (let col = 0; col < game.alienCols; col++) {
+                let x = leftmostX + col * spacingX;
+                // Use a higher-value alien type for reinforcements to make them more threatening
+                let type = Math.min(3, Math.floor(game.level / 2) + 1);
+                game.aliens.push(new Alien(x, newRowY, type));
+            }
+        }
+        
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 6; i++) {
+                game.particles.push(new Particle(x, y, color));
+            }
+        }
+        
+        function updateParticles() {
+            for (let i = game.particles.length - 1; i >= 0; i--) {
+                let particle = game.particles[i];
+                particle.update();
+                if (particle.life <= 0) {
+                    game.particles.splice(i, 1);
+                }
+            }
+        }
+        
+        function checkBombSpawn() {
+            if (game.score >= game.nextBombScore && game.bombs.length === 0) {
+                let x = Math.random() * (game.width - 200) + 100;
+                let y = Math.random() * 200 + 100;
+                game.bombs.push(new Bomb(x, y));
+                
+                // Set next bomb score based on current level and whether bomb was missed
+                if (game.level === 1) {
+                    game.nextBombScore += 200; // Every 200 points after first bomb in level 1
+                } else {
+                    game.nextBombScore += 200; // Every 200 points if bomb is missed
+                }
+            }
+        }
+        
+        function collectBomb(index) {
+            // Remove bomb
+            game.bombs.splice(index, 1);
+            
+            // Destroy all aliens and award bonus points
+            let bonusPoints = game.aliens.length * 50;
+            game.score += bonusPoints;
+            
+            // Create explosion particles
+            game.aliens.forEach(alien => {
+                createParticles(alien.x + alien.width/2, alien.y + alien.height/2, alien.color);
+            });
+            
+            game.aliens = [];
+            game.reinforcements = 0;
+            
+            // Advance to next level
+            setTimeout(() => {
+                nextLevel();
+            }, 1000);
+        }
+        
+        function loseLife() {
+            game.lives--;
+            updateUI();
+            
+            if (game.lives <= 0) {
+                gameOver();
+            } else {
+                // Reset ball
+                game.ball = new Ball(game.width/2, game.height - 60);
+            }
+        }
+        
+        function nextLevel() {
+            // Bonus life if no lives lost this level
+            let livesAtStart = 3; // You'd track this properly in a full implementation
+            if (game.lives === livesAtStart) {
+                game.lives = Math.min(9, game.lives + 1);
+            }
+            
+            game.level++;
+            resetLevel();
+        }
+        
+        function gameOver() {
+            game.running = false;
+            
+            // Check for high score
+            if (isHighScore(game.score)) {
+                document.getElementById('highScore').textContent = game.score;
+                document.getElementById('highScoreEntry').style.display = 'block';
+            } else {
+                document.getElementById('finalScore').textContent = game.score;
+                document.getElementById('gameOver').style.display = 'block';
+            }
+        }
+        
+        function restartGame() {
+            document.getElementById('gameOver').style.display = 'none';
+            startGame();
+        }
+        
+        function updateUI() {
+            document.getElementById('score').textContent = game.score;
+            document.getElementById('level').textContent = game.level;
+            document.getElementById('lives').textContent = game.lives;
+            document.getElementById('reinforcements').textContent = game.reinforcements;
+            document.getElementById('nextBomb').textContent = game.nextBombScore;
+        }
+        
+        // High score system
+        function loadHighScores() {
+            // Since localStorage is not available in artifacts, use in-memory storage
+            game.highScores = [];
+        }
+        
+        function saveHighScores() {
+            // Since localStorage is not available in artifacts, this is a no-op
+            // In a full implementation, this would save to localStorage
+        }
+        
+        function isHighScore(score) {
+            return game.highScores.length < 10 || score > game.highScores[game.highScores.length - 1].score;
+        }
+        
+        function saveHighScore() {
+            let name = document.getElementById('playerName').value.toUpperCase() || 'AAA';
+            
+            game.highScores.push({
+                name: name,
+                score: game.score,
+                date: new Date().toLocaleDateString()
+            });
+            
+            game.highScores.sort((a, b) => b.score - a.score);
+            game.highScores = game.highScores.slice(0, 10);
+            
+            saveHighScores();
+            
+            document.getElementById('highScoreEntry').style.display = 'none';
+            document.getElementById('finalScore').textContent = game.score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        // Main game loop
+        function gameLoop() {
+            if (!game.running) return;
+            
+            // Clear canvas
+            game.ctx.clearRect(0, 0, game.width, game.height);
+            
+            // Update game objects
+            game.paddle.update();
+            game.ball.update();
+            updateAliens();
+            updateParticles();
+            checkBombSpawn();
+            
+            game.bombs.forEach(bomb => bomb.update());
+            
+            // Draw everything
+            game.paddle.draw();
+            game.ball.draw();
+            game.aliens.forEach(alien => alien.draw());
+            game.bombs.forEach(bomb => bomb.draw());
+            game.particles.forEach(particle => particle.draw());
+            
+            updateUI();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
