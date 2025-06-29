@@ -161,7 +161,7 @@
         </div>
         
         <div id="startScreen">
-            Use LEFT/RIGHT arrows or A/D to move paddle • Collect bombs to skip levels • Prevent aliens from reaching the bottom!
+            Use LEFT/RIGHT arrows to move paddle • Press UP to launch the ball • Collect bombs to skip levels • Prevent aliens from reaching the bottom!
             <br>
             <button onclick="beginGame()">PLAY!</button>
         </div>
@@ -247,9 +247,9 @@
             }
             
             update() {
-                if (game.keys['ArrowLeft'] || game.keys['a']) {
+                if (game.keys['ArrowLeft']) {
                     this.velX = -this.speed;
-                } else if (game.keys['ArrowRight'] || game.keys['d']) {
+                } else if (game.keys['ArrowRight']) {
                     this.velX = this.speed;
                 } else {
                     this.velX *= 0.8; // Deceleration
@@ -290,6 +290,7 @@
                 this.velY = -2.5;
                 this.trail = [];
                 this.attached = false;
+                this.autoLaunchTimer = null;
             }
 
             launch() {
@@ -301,6 +302,21 @@
                 this.velY = -Math.abs(Math.cos(bounceAngle) * speed);
                 clampBallSpeed(this);
                 this.attached = false;
+                if (this.autoLaunchTimer) {
+                    clearTimeout(this.autoLaunchTimer);
+                    this.autoLaunchTimer = null;
+                }
+            }
+
+            startAutoLaunch() {
+                if (this.autoLaunchTimer) {
+                    clearTimeout(this.autoLaunchTimer);
+                }
+                this.autoLaunchTimer = setTimeout(() => {
+                    if (this.attached) {
+                        this.launch();
+                    }
+                }, 3000);
             }
 
             update() {
@@ -573,22 +589,22 @@
             // Set up event listeners
             document.addEventListener('keydown', (e) => {
                 game.keys[e.key] = true;
-                const key = e.key.toLowerCase();
-                if (key === ' ') {
+                const lower = e.key.toLowerCase();
+                if (lower === 'arrowup') {
                     e.preventDefault();
                     if (!game.running) {
                         beginGame();
                     } else if (game.ball && game.ball.attached && !game.paused) {
                         game.ball.launch();
                     }
-                } else if (key === 'p') {
+                } else if (lower === 'p') {
                     e.preventDefault();
                     if (game.paused) {
                         resumeGame();
                     } else if (game.running) {
                         pauseGame();
                     }
-                } else if (key === 'r') {
+                } else if (lower === 'r') {
                     e.preventDefault();
                     if (game.running) {
                         requestRestart();
@@ -830,6 +846,7 @@
                     game.ball.velX = 0;
                     game.ball.velY = 0;
                     game.ball.attached = true;
+                    game.ball.startAutoLaunch();
                 }, 1000);
             }
         }
