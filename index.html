@@ -212,9 +212,12 @@
             bombThreshold: 500,
             nextBombScore: 500,
             bombAvailable: false,
-            
+
             // High scores
-            highScores: []
+            highScores: [],
+
+            // Animation frame id
+            loopId: null
         };
         
         // Paddle class
@@ -547,6 +550,11 @@
         }
 
         function startGame() {
+            if (game.loopId !== null) {
+                cancelAnimationFrame(game.loopId);
+                game.loopId = null;
+            }
+
             game.running = true;
             game.paused = false;
             game.score = 0;
@@ -852,7 +860,7 @@
             if (!game.running) return;
 
             if (game.paused) {
-                requestAnimationFrame(gameLoop);
+                game.loopId = requestAnimationFrame(gameLoop);
                 return;
             }
 
@@ -876,8 +884,8 @@
             game.particles.forEach(particle => particle.draw());
             
             updateUI();
-            
-            requestAnimationFrame(gameLoop);
+
+            game.loopId = requestAnimationFrame(gameLoop);
         }
         
         // Initialize when page loads
