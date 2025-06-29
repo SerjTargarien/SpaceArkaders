@@ -694,12 +694,12 @@
             let topY = Math.min(...game.aliens.map(a => a.y));
             let newRowY = topY - 35;
 
-            // Use fixed spacing for reinforcements regardless of remaining aliens
-            const startX = 100;
+            // Align the new row with the current leftmost alien
+            const minX = Math.min(...game.aliens.map(a => a.x));
             const spacingX = 60;
 
             for (let col = 0; col < game.alienCols; col++) {
-                let x = startX + col * spacingX;
+                let x = minX + col * spacingX;
 
                 // Weighted probabilities for alien types
                 let r = Math.random();
