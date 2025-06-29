@@ -67,9 +67,9 @@ This is a fast-paced 2D single-screen arcade game. The player controls a horizon
 
 💣 Bomb Mechanic
 
-    As the player accumulates points during a level, they unlock a bomb pickup once a score threshold is reached.
+    Destroying a purple alien immediately spawns a bomb.
 
-    The bomb appears at a random location inside the game area (not just the edges) and slowly descends vertically.
+    The bomb starts from the defeated alien's horizontal position and slowly descends vertically.
 
     The bomb can be collected in two ways:
 
@@ -85,7 +85,7 @@ This is a fast-paced 2D single-screen arcade game. The player controls a horizon
 
         The game advances immediately to the next level.
 
-    If the player misses the bomb (i.e. it leaves the screen), the next bomb will appear only after they reach a new score threshold.
+    If the player misses the bomb (i.e. it leaves the screen), no replacement appears until another purple alien is destroyed.
 
 📈 Level Progression
 
@@ -163,7 +163,7 @@ To complete a level, the player must:
 
         Number of alien reinforcements remaining.
 
-        Bomb availability and score needed for next drop.
+        Bomb availability (spawned by destroying purple aliens).
 
 ✅ Summary of Win and Loss Conditions
 

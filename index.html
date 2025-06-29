@@ -143,7 +143,6 @@
             <div>Level: <span id="level">1</span></div>
             <div>Lives: <span id="lives">3</span></div>
             <div>Reinforcements: <span id="reinforcements">5</span></div>
-            <div id="bombStatus">Next Bomb: <span id="nextBomb">1000</span></div>
         </div>
         
         <div id="gameOver">
@@ -161,7 +160,7 @@
         </div>
         
         <div id="startScreen">
-            Use LEFT/RIGHT arrows to move paddle • Press UP to launch the ball • Collect bombs to skip levels • Prevent aliens from reaching the bottom!
+            Use LEFT/RIGHT arrows to move paddle • Press UP to launch the ball • Destroy purple aliens to spawn bombs • Prevent aliens from reaching the bottom!
             <br>
             <button onclick="beginGame()">PLAY!</button>
         </div>
@@ -208,10 +207,6 @@
             maxReinforcements: 5,
             alienDirection: 1, // 1 for right, -1 for left
             
-            // Bomb system
-            bombThreshold: 1000,
-            nextBombScore: 1000,
-            bombAvailable: false,
 
             // High scores
             highScores: [],
@@ -385,6 +380,9 @@
                         // Destroy alien
                         game.score += alien.points;
                         createParticles(alien.x + alien.width/2, alien.y + alien.height/2, alien.color);
+                        if (alien.type === 3) {
+                            game.bombs.push(new Bomb(alien.x, alien.y));
+                        }
                         game.aliens.splice(i, 1);
                         
                         // Bounce ball
@@ -525,8 +523,7 @@
                     let index = game.bombs.indexOf(this);
                     if (index !== -1) {
                         game.bombs.splice(index, 1);
-                        // Bomb was missed, set next bomb to appear after another threshold
-                        game.nextBombScore = game.score + game.bombThreshold;
+                        // Bomb was missed
                     }
                 }
             }
@@ -633,9 +630,6 @@
             game.lives = 3;
             game.level = 1;
             
-            // Reset bomb system for level 1
-            game.bombThreshold = 1000; // First bomb at 1000 points in level 1
-            game.nextBombScore = 1000;
             
             resetLevel();
             gameLoop();
@@ -665,16 +659,7 @@
             game.ballSpeed = 2.5 + (game.level - 1) * 0.1;
             game.reinforcements = game.level * 5; // 5, 10, 15, 20... progression
             game.alienDirection = 1; // Reset direction to right
-            
-            // Set bomb threshold for this level
-            if (game.level === 1) {
-                game.bombThreshold = 1000;
-                game.nextBombScore = Math.max(game.nextBombScore, game.score + 1000);
-            } else {
-                game.bombThreshold = game.level * 1000; // Level 2: 2000, Level 3: 3000, etc.
-                game.nextBombScore = Math.max(game.nextBombScore, game.score + game.bombThreshold);
-            }
-            
+
             createAlienFormation();
             updateUI();
         }
@@ -794,17 +779,6 @@
             }
         }
         
-        function checkBombSpawn() {
-            if (!game.transitioning && game.score >= game.nextBombScore && game.bombs.length === 0) {
-                let x = Math.random() * (game.width - 200) + 100;
-                let y = Math.random() * 200 + 100;
-                game.bombs.push(new Bomb(x, y));
-                
-                // Increase next bomb threshold
-                game.nextBombScore += game.bombThreshold;
-            }
-        }
-        
         function collectBomb(index) {
             // Remove bomb
             game.bombs.splice(index, 1);
@@ -916,7 +890,6 @@
             document.getElementById('level').textContent = game.level;
             document.getElementById('lives').textContent = game.lives;
             document.getElementById('reinforcements').textContent = game.reinforcements;
-            document.getElementById('nextBomb').textContent = game.nextBombScore;
         }
         
         // High score system
@@ -970,7 +943,6 @@
             game.ball.update();
             updateAliens();
             updateParticles();
-            checkBombSpawn();
             
             game.bombs.forEach(bomb => bomb.update());
             
