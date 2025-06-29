@@ -742,7 +742,8 @@
                 
                 // Add reinforcements if available
                 if (game.reinforcements > 0) {
-                    addReinforcementRow();
+                    const lastWave = game.reinforcements === 1;
+                    addReinforcementRow(lastWave);
                     game.reinforcements--;
                 }
             } else {
@@ -754,9 +755,11 @@
             }
         }
         
-        function addReinforcementRow() {
+        function addReinforcementRow(lastWave = false) {
             // Place the new row above the current formation
             if (game.aliens.length === 0) return;
+
+            let hadPurpleBefore = game.aliens.some(a => a.type === 3);
 
             let topY = Math.min(...game.aliens.map(a => a.y));
             let newRowY = topY - 35;
@@ -764,6 +767,9 @@
             // Align the new row with the current leftmost alien
             const minX = Math.min(...game.aliens.map(a => a.x));
             const spacingX = 60;
+
+            let newAliens = [];
+            let spawnedPurple = false;
 
             for (let col = 0; col < game.alienCols; col++) {
                 let x = minX + col * spacingX;
@@ -784,9 +790,19 @@
                         type = 2; // Red
                     }
                 }
-
-                game.aliens.push(new Alien(x, newRowY, type));
+                if (type === 3) spawnedPurple = true;
+                newAliens.push(new Alien(x, newRowY, type));
             }
+
+            if (lastWave && !hadPurpleBefore && !spawnedPurple) {
+                let idx = Math.floor(Math.random() * newAliens.length);
+                let forced = newAliens[idx];
+                forced.type = 3;
+                forced.points = 100;
+                forced.color = '#ff00ff';
+            }
+
+            newAliens.forEach(a => game.aliens.push(a));
         }
         
         function createParticles(x, y, color) {
