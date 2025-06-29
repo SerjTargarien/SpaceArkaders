@@ -636,8 +636,9 @@
                 for (let col = 0; col < game.alienCols; col++) {
                     let x = startX + col * spacingX;
                     let y = startY + row * spacingY;
-                    // Rows 0-1: yellow, 2-3: green, last row: red
-                    let type = Math.floor(row / 2);
+                    // Top row red, middle rows green, bottom rows yellow
+                    let reversedRow = game.alienRows - 1 - row;
+                    let type = Math.floor(reversedRow / 2);
                     game.aliens.push(new Alien(x, y, type));
                 }
             }
