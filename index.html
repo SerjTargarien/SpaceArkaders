@@ -143,7 +143,7 @@
             <div>Level: <span id="level">1</span></div>
             <div>Lives: <span id="lives">3</span></div>
             <div>Reinforcements: <span id="reinforcements">5</span></div>
-            <div id="bombStatus">Next Bomb: <span id="nextBomb">500</span></div>
+            <div id="bombStatus">Next Bomb: <span id="nextBomb">1000</span></div>
         </div>
         
         <div id="gameOver">
@@ -209,8 +209,8 @@
             alienDirection: 1, // 1 for right, -1 for left
             
             // Bomb system
-            bombThreshold: 500,
-            nextBombScore: 500,
+            bombThreshold: 1000,
+            nextBombScore: 1000,
             bombAvailable: false,
 
             // High scores
@@ -404,8 +404,8 @@
                 switch(type) {
                     case 0: this.points = 10; this.color = '#ff0000'; break;
                     case 1: this.points = 20; this.color = '#ff8800'; break;
-                    case 2: this.points = 30; this.color = '#ffff00'; break;
-                    default: this.points = 40; this.color = '#ff00ff'; break;
+                    case 2: this.points = 50; this.color = '#ffff00'; break;
+                    default: this.points = 100; this.color = '#ff00ff'; break;
                 }
             }
             
@@ -464,8 +464,8 @@
                     let index = game.bombs.indexOf(this);
                     if (index !== -1) {
                         game.bombs.splice(index, 1);
-                        // Bomb was missed, set next bomb to appear in 200 points
-                        game.nextBombScore = game.score + 200;
+                        // Bomb was missed, set next bomb to appear after another threshold
+                        game.nextBombScore = game.score + game.bombThreshold;
                     }
                 }
             }
@@ -569,8 +569,8 @@
             game.level = 1;
             
             // Reset bomb system for level 1
-            game.bombThreshold = 500; // First bomb at 500 points in level 1
-            game.nextBombScore = 500;
+            game.bombThreshold = 1000; // First bomb at 1000 points in level 1
+            game.nextBombScore = 1000;
             
             resetLevel();
             gameLoop();
@@ -603,10 +603,10 @@
             
             // Set bomb threshold for this level
             if (game.level === 1) {
-                game.bombThreshold = 500;
-                game.nextBombScore = Math.max(game.nextBombScore, game.score + 500);
+                game.bombThreshold = 1000;
+                game.nextBombScore = Math.max(game.nextBombScore, game.score + 1000);
             } else {
-                game.bombThreshold = game.level * 500; // Level 2: 1000, Level 3: 1500, etc.
+                game.bombThreshold = game.level * 1000; // Level 2: 2000, Level 3: 3000, etc.
                 game.nextBombScore = Math.max(game.nextBombScore, game.score + game.bombThreshold);
             }
             
@@ -689,11 +689,23 @@
             let availableWidth = rightmostX - leftmostX - alienWidth;
             let spacingX = availableWidth / (game.alienCols - 1);
 
-            // Create a full row of aliens aligned with current alien positions
+            // Create a full row of aliens with weighted random types
             for (let col = 0; col < game.alienCols; col++) {
                 let x = leftmostX + col * spacingX;
-                // Use a higher-value alien type for reinforcements to make them more threatening
-                let type = Math.min(3, Math.floor(game.level / 2) + 1);
+
+                // Weighted probabilities for alien types
+                let r = Math.random();
+                let type;
+                if (r < 0.6) {
+                    type = 0; // 10 point alien is common
+                } else if (r < 0.85) {
+                    type = 1; // 20 point alien
+                } else if (r < 0.97) {
+                    type = 2; // 50 point alien
+                } else {
+                    type = 3; // 100 point alien is rare
+                }
+
                 game.aliens.push(new Alien(x, newRowY, type));
             }
         }
@@ -727,12 +739,8 @@
                 let y = Math.random() * 200 + 100;
                 game.bombs.push(new Bomb(x, y));
                 
-                // Set next bomb score based on current level and whether bomb was missed
-                if (game.level === 1) {
-                    game.nextBombScore += 200; // Every 200 points after first bomb in level 1
-                } else {
-                    game.nextBombScore += 200; // Every 200 points if bomb is missed
-                }
+                // Increase next bomb threshold
+                game.nextBombScore += game.bombThreshold;
             }
         }
         
