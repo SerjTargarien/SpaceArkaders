@@ -114,9 +114,7 @@ To complete a level, the player must:
 
     Losing the ball reduces the life count by one.
 
-    If the player completes a level without losing any lives during that level, they are rewarded with an extra life.
-
-    The player can accumulate multiple extra lives but up to a reasonable maximum (e.g., 9).
+    Every 5000 points earned grants the player an extra life, up to a reasonable maximum (e.g., 9).
 
     The game ends if:
 
