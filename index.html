@@ -277,15 +277,33 @@
                 this.velX = 2;
                 this.velY = -2.5;
                 this.trail = [];
+                this.attached = false;
             }
-            
+
+            launch() {
+                let hitPos = (this.x - game.paddle.x) / game.paddle.width;
+                let bounceAngle = (hitPos - 0.5) * Math.PI * 0.5;
+
+                let speed = game.ballSpeed;
+                this.velX = Math.sin(bounceAngle) * speed + game.paddle.velX * 0.2;
+                this.velY = -Math.abs(Math.cos(bounceAngle) * speed);
+                this.attached = false;
+            }
+
             update() {
+                if (this.attached) {
+                    this.trail = [];
+                    this.x = game.paddle.x + game.paddle.width/2;
+                    this.y = game.paddle.y - this.radius;
+                    return;
+                }
+
                 // Store trail positions
                 this.trail.push({x: this.x, y: this.y});
                 if (this.trail.length > 8) {
                     this.trail.shift();
                 }
-                
+
                 this.x += this.velX;
                 this.y += this.velY;
                 
@@ -544,7 +562,11 @@
                 const key = e.key.toLowerCase();
                 if (key === ' ') {
                     e.preventDefault();
-                    if (!game.running) beginGame();
+                    if (!game.running) {
+                        beginGame();
+                    } else if (game.ball && game.ball.attached && !game.paused) {
+                        game.ball.launch();
+                    }
                 } else if (key === 'p') {
                     e.preventDefault();
                     if (game.paused) {
@@ -781,12 +803,20 @@
         function loseLife() {
             game.lives--;
             updateUI();
-            
+
             if (game.lives <= 0) {
                 gameOver();
             } else {
-                // Reset ball
-                game.ball = new Ball(game.width/2, game.height - 60);
+                game.paused = true;
+                setTimeout(() => {
+                    game.paused = false;
+                    game.ball = new Ball(game.paddle.x + game.paddle.width/2,
+                                        game.paddle.y);
+                    game.ball.y = game.paddle.y - game.ball.radius;
+                    game.ball.velX = 0;
+                    game.ball.velY = 0;
+                    game.ball.attached = true;
+                }, 1000);
             }
         }
         
