@@ -606,6 +606,7 @@
             
             // Set up event listeners
             document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT') return;
                 game.keys[e.key] = true;
                 const lower = e.key.toLowerCase();
                 if (lower === 'arrowup') {
@@ -616,21 +617,23 @@
                         game.ball.launch();
                     }
                 } else if (lower === 'p') {
-                    e.preventDefault();
                     if (game.paused) {
+                        e.preventDefault();
                         resumeGame();
                     } else if (game.running) {
+                        e.preventDefault();
                         pauseGame();
                     }
                 } else if (lower === 'r') {
-                    e.preventDefault();
                     if (game.running) {
+                        e.preventDefault();
                         requestRestart();
                     }
                 }
             });
             
             document.addEventListener('keyup', (e) => {
+                if (e.target.tagName === 'INPUT') return;
                 game.keys[e.key] = false;
             });
             
