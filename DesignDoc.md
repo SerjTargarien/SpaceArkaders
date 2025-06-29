@@ -65,6 +65,9 @@ This is a fast-paced 2D single-screen arcade game. The player controls a horizon
 
     A counter tracks how many alien reinforcements remain for the current level.
 
+    Purple aliens begin extremely rare. Each alien kill slightly increases their spawn chance,
+    reaching a maximum of 10% when the kill counter is maxed for the level.
+
 💣 Bomb Mechanic
 
     Destroying a purple alien immediately spawns a bomb.
