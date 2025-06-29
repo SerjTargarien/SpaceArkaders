@@ -688,24 +688,18 @@
         }
         
         function addReinforcementRow() {
-            // Find the topmost alien to determine where to place the new row
+            // Place the new row above the current formation
             if (game.aliens.length === 0) return;
 
             let topY = Math.min(...game.aliens.map(a => a.y));
-            let newRowY = topY - 35; // Place new row above existing aliens
+            let newRowY = topY - 35;
 
-            // Find the leftmost and rightmost positions of current aliens
-            let leftmostX = Math.min(...game.aliens.map(a => a.x));
-            let rightmostX = Math.max(...game.aliens.map(a => a.x + a.width));
+            // Use fixed spacing for reinforcements regardless of remaining aliens
+            const startX = 100;
+            const spacingX = 60;
 
-            // Calculate consistent spacing based on formation width
-            let alienWidth = game.aliens[0].width;
-            let availableWidth = rightmostX - leftmostX - alienWidth;
-            let spacingX = availableWidth / (game.alienCols - 1);
-
-            // Create a full row of aliens with weighted random types
             for (let col = 0; col < game.alienCols; col++) {
-                let x = leftmostX + col * spacingX;
+                let x = startX + col * spacingX;
 
                 // Weighted probabilities for alien types
                 let r = Math.random();

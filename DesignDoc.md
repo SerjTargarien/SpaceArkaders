@@ -51,6 +51,7 @@ This is a fast-paced 2D single-screen arcade game. The player controls a horizon
         It shifts downward by a fixed vertical step. 20 pixels.
 
         It spawns a new row of aliens at the top of the formation—but only if reinforcements are still available for that level.
+        Each reinforcement row always consists of 10 aliens, regardless of how many remain from the previous wave.
 
         The direction of movement reverses.
 
