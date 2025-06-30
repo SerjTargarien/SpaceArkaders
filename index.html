@@ -189,6 +189,12 @@
         </div>
     </div>
 
+    <audio id="bgMusic" src="assets/background-music.mp3" preload="auto" loop></audio>
+    <audio id="sndPaddle" src="assets/ball-collision.wav" preload="auto"></audio>
+    <audio id="sndAlien" src="assets/alien-destroyed.wav" preload="auto"></audio>
+    <audio id="sndBomb" src="assets/bomb-collect.wav" preload="auto"></audio>
+    <audio id="sndPause" src="assets/pause-toggle.wav" preload="auto"></audio>
+
     <script>
         // Game state
         let game = {
@@ -261,6 +267,12 @@
                 ball.velY *= scale;
                 console.log(`Ball speed capped to ${MAX_BALL_SPEED}`);
             }
+        }
+
+        function playSound(audio) {
+            if (!audio) return;
+            const snd = audio.cloneNode();
+            snd.play();
         }
         
         // Paddle class
@@ -378,12 +390,14 @@
                     this.velX = -this.velX;
                     this.x = Math.max(this.radius, Math.min(game.width - this.radius, this.x));
                     createParticles(this.x, this.y, '#ffffff');
+                    playSound(game.sounds.paddle);
                 }
                 
                 if (this.y - this.radius <= 40) { // Account for UI
                     this.velY = -this.velY;
                     this.y = 40 + this.radius;
                     createParticles(this.x, this.y, '#ffffff');
+                    playSound(game.sounds.paddle);
                 }
                 
                 // Paddle collision
@@ -403,6 +417,7 @@
 
                     this.y = game.paddle.y - this.radius;
                     createParticles(this.x, this.y, '#00ff00');
+                    playSound(game.sounds.paddle);
                 }
                 
                 // Check if ball is lost
@@ -426,6 +441,7 @@
                             game.bombs.push(new Bomb(alien.x, alien.y));
                         }
                         game.aliens.splice(i, 1);
+                        playSound(game.sounds.alien);
 
                         // Update kill counter and purple spawn chance
                         game.killCounter = Math.min(game.killCounter + 1, game.maxKillCounter);
@@ -630,6 +646,14 @@
         function init() {
             game.canvas = document.getElementById('gameCanvas');
             game.ctx = game.canvas.getContext('2d');
+
+            game.sounds = {
+                paddle: document.getElementById('sndPaddle'),
+                alien: document.getElementById('sndAlien'),
+                bomb: document.getElementById('sndBomb'),
+                pause: document.getElementById('sndPause'),
+                bgMusic: document.getElementById('bgMusic')
+            };
             
             // Load high scores
             loadHighScores();
@@ -702,6 +726,9 @@
             game.lives = 3;
             game.level = 1;
             game.nextLifeScore = 5000;
+
+            game.sounds.bgMusic.currentTime = 0;
+            game.sounds.bgMusic.play();
             
             
             resetLevel();
@@ -882,6 +909,7 @@
         function collectBomb(index) {
             // Remove bomb
             game.bombs.splice(index, 1);
+            playSound(game.sounds.bomb);
 
             // Freeze ball during level transition
             freezeBall();
@@ -935,6 +963,7 @@
         function gameOver() {
             cancelGameLoop();
             game.running = false;
+            game.sounds.bgMusic.pause();
 
             // Check for high score
             if (isHighScore(game.score)) {
@@ -958,6 +987,7 @@
             document.getElementById('restartConfirm').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
             game.paused = false;
+            game.sounds.bgMusic.pause();
             // If a game loop is active, flag it to stop on its next frame
             game.restartPending = game.running;
             startGame();
@@ -967,12 +997,16 @@
             if (!game.running || game.paused) return;
             game.paused = true;
             document.getElementById('pauseOverlay').style.display = 'block';
+            playSound(game.sounds.pause);
+            game.sounds.bgMusic.pause();
         }
 
         function resumeGame() {
             if (!game.paused) return;
             game.paused = false;
             document.getElementById('pauseOverlay').style.display = 'none';
+            playSound(game.sounds.pause);
+            game.sounds.bgMusic.play();
         }
 
         function requestRestart() {
