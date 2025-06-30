@@ -472,6 +472,7 @@
                         // Check for level completion
                         if (game.aliens.length === 0 && game.reinforcements === 0) {
                             freezeBall();
+                            game.bombs = [];
                             game.transitioning = true;
                             setTimeout(() => {
                                 nextLevel();
@@ -955,6 +956,7 @@
         function collectBomb(index) {
             // Remove bomb
             game.bombs.splice(index, 1);
+            game.bombs = [];
             playSound(game.sounds.bomb);
 
             // Freeze ball during level transition
