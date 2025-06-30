@@ -654,6 +654,11 @@
                 pause: document.getElementById('sndPause'),
                 bgMusic: document.getElementById('bgMusic')
             };
+
+            // Lower default background music volume
+            if (game.sounds.bgMusic) {
+                game.sounds.bgMusic.volume = 0.4;
+            }
             
             // Load high scores
             loadHighScores();
