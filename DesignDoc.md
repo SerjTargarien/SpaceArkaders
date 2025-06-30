@@ -164,8 +164,6 @@ To complete a level, the player must:
 
         Number of alien reinforcements remaining.
 
-        Bomb availability (spawned by destroying purple aliens).
-
 ✅ Summary of Win and Loss Conditions
 
     Level Win: All aliens destroyed and no reinforcements remain, or a bomb is collected.
