@@ -194,6 +194,8 @@
     <audio id="sndAlien" src="assets/alien-destroyed.wav" preload="auto"></audio>
     <audio id="sndBomb" src="assets/bomb-collect.wav" preload="auto"></audio>
     <audio id="sndPause" src="assets/pause-toggle.wav" preload="auto"></audio>
+	<audio id="sndLifeLost" src="assets/life-lost.wav" preload="auto"></audio>
+    <audio id="sndGameOver" src="assets/game-over.wav" preload="auto"></audio>
 
     <script>
         // Game state
@@ -652,12 +654,14 @@
                 alien: document.getElementById('sndAlien'),
                 bomb: document.getElementById('sndBomb'),
                 pause: document.getElementById('sndPause'),
+				lifeLost: document.getElementById('sndLifeLost'),
+                gameOver: document.getElementById('sndGameOver'),
                 bgMusic: document.getElementById('bgMusic')
             };
 
             // Lower default background music volume
             if (game.sounds.bgMusic) {
-                game.sounds.bgMusic.volume = 0.4;
+                game.sounds.bgMusic.volume = 0.3;
             }
             
             // Load high scores
@@ -815,6 +819,7 @@
 
                     // Check if aliens reached paddle
                     if (alien.y + alien.height >= game.paddle.y) {
+						playSound(game.sounds.gameOver);
                         gameOver();
                         return;
                     }
@@ -941,6 +946,7 @@
         
         function loseLife() {
             game.lives--;
+			playSound(game.sounds.lifeLost);
             updateUI();
 
             if (game.lives <= 0) {
