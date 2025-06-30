@@ -674,6 +674,14 @@
             inputLoop();
         }
 
+        // Cancel any active animation frame for the main game loop
+        function cancelGameLoop() {
+            if (game.loopId !== null) {
+                cancelAnimationFrame(game.loopId);
+                game.loopId = null;
+            }
+        }
+
         function startGame() {
             if (game.loopId !== null) {
                 cancelAnimationFrame(game.loopId);
@@ -925,6 +933,7 @@
         }
         
         function gameOver() {
+            cancelGameLoop();
             game.running = false;
 
             // Check for high score
@@ -944,6 +953,7 @@
         }
         
         function restartGame() {
+            cancelGameLoop();
             document.getElementById('gameOver').style.display = 'none';
             document.getElementById('restartConfirm').style.display = 'none';
             document.getElementById('pauseOverlay').style.display = 'none';
