@@ -269,7 +269,8 @@
 
         function resizeGame() {
             const container = document.getElementById('gameContainer');
-            const scale = Math.min(window.innerWidth / game.width, window.innerHeight / game.height);
+            const viewport = window.visualViewport || window;
+            const scale = Math.min(viewport.width / game.width, viewport.height / game.height);
             container.style.transform = `scale(${scale})`;
         }
 
@@ -734,6 +735,10 @@
 
             resizeGame();
             window.addEventListener('resize', resizeGame);
+            window.addEventListener('orientationchange', resizeGame);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', resizeGame);
+            }
         }
 
         // Cancel any active animation frame for the main game loop
