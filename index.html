@@ -1082,7 +1082,11 @@
             list.innerHTML = '';
             game.highScores.forEach(hs => {
                 const li = document.createElement('li');
-                li.textContent = `${hs.name} - ${hs.score}`;
+                if (hs.level !== undefined) {
+                    li.textContent = `${hs.name} - ${hs.score} (Lv ${hs.level})`;
+                } else {
+                    li.textContent = `${hs.name} - ${hs.score}`;
+                }
                 list.appendChild(li);
             });
         }
@@ -1097,7 +1101,7 @@
             game.highScores.push({
                 name: name,
                 score: game.score,
-                date: new Date().toLocaleDateString()
+                level: game.level
             });
 
             game.highScores.sort((a, b) => b.score - a.score);
