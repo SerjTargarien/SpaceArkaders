@@ -769,15 +769,16 @@
             
             if (shouldMoveDown) {
                 // Move all aliens down and reverse direction
-                game.aliens.forEach(alien => {
+                for (let i = 0; i < game.aliens.length; i++) {
+                    const alien = game.aliens[i];
                     alien.y += 20; // Move down by a fixed amount
-                    
+
                     // Check if aliens reached paddle
                     if (alien.y + alien.height >= game.paddle.y) {
                         gameOver();
                         return;
                     }
-                });
+                }
                 
                 // Reverse direction
                 game.alienDirection *= -1;
