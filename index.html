@@ -206,6 +206,8 @@
             height: 600,
             running: false,
             paused: false,
+            soundMuted: false,
+            musicMuted: false,
             score: 0,
             lives: 3,
             level: 1,
@@ -272,7 +274,7 @@
         }
 
         function playSound(audio) {
-            if (!audio) return;
+            if (!audio || game.soundMuted) return;
             const snd = audio.cloneNode();
             snd.play();
         }
@@ -692,6 +694,17 @@
                         e.preventDefault();
                         requestRestart();
                     }
+                } else if (lower === 'm') {
+                    e.preventDefault();
+                    game.musicMuted = !game.musicMuted;
+                    if (game.musicMuted) {
+                        game.sounds.bgMusic.pause();
+                    } else if (game.running && !game.paused) {
+                        game.sounds.bgMusic.play();
+                    }
+                } else if (lower === 's') {
+                    e.preventDefault();
+                    game.soundMuted = !game.soundMuted;
                 }
             });
             
@@ -737,7 +750,9 @@
             game.nextLifeScore = 5000;
 
             game.sounds.bgMusic.currentTime = 0;
-            game.sounds.bgMusic.play();
+            if (!game.musicMuted) {
+                game.sounds.bgMusic.play();
+            }
             
             
             resetLevel();
@@ -1017,7 +1032,9 @@
             game.paused = false;
             document.getElementById('pauseOverlay').style.display = 'none';
             playSound(game.sounds.pause);
-            game.sounds.bgMusic.play();
+            if (!game.musicMuted) {
+                game.sounds.bgMusic.play();
+            }
         }
 
         function requestRestart() {
