@@ -132,7 +132,7 @@ To complete a level, the player must:
 
         Score.
 
-        Date of the score (if desired).
+        Maximum level reached.
 
     The high score list is saved between sessions and keeps the top 10 scores in descending order.
 
