@@ -557,6 +557,11 @@
             }
 
             destroy() {
+                const color = `hsl(${this.hue},100%,70%)`;
+                createParticles(this.x + this.width/2, this.y, color);
+                this.trail.forEach(pos => {
+                    createParticles(pos.x + this.width/2, pos.y, color);
+                });
                 game.bullet = null;
                 game.nextBulletTime = Date.now() + 500;
             }
@@ -1080,7 +1085,6 @@
                 return;
             }
             game.bullet = new Bullet(game.paddle.x + game.paddle.width/2, game.paddle.y);
-            createParticles(game.paddle.x + game.paddle.width/2, game.paddle.y, '#ff8800');
             game.paddle.recoilOffset = 4;
             playSound(game.sounds.shoot);
         }
