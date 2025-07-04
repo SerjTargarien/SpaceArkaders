@@ -203,6 +203,8 @@
     <audio id="sndPause" src="assets/pause-toggle.wav" preload="auto"></audio>
     <audio id="sndLifeLost" src="assets/life-lost.wav" preload="auto"></audio>
     <audio id="sndGameOver" src="assets/game-over.wav" preload="auto"></audio>
+    <audio id="sndShoot" src="assets/laser-shoot.wav" preload="auto"></audio>
+    <audio id="sndReady" src="assets/laser-ready.wav" preload="auto"></audio>
 
     <script>
         // Game state
@@ -239,6 +241,7 @@
             particles: [],
             bullet: null,
             nextBulletTime: 0,
+            prevBulletReady: false,
             
             // Level settings
             alienRows: 5,
@@ -348,6 +351,10 @@
                 game.ctx.shadowBlur = 0;
 
                 const ready = !game.bullet && Date.now() >= game.nextBulletTime;
+                if (ready && !game.prevBulletReady) {
+                    playSound(game.sounds.ready);
+                }
+                game.prevBulletReady = ready;
                 game.ctx.fillStyle = ready ? "#ff8800" : "#ffffff";
                 const indW = 4, indH = 8;
                 const cx = this.x + this.width/2;
@@ -548,6 +555,7 @@
             update() {
                 this.y -= this.speed;
                 if (this.y + this.height < 40) {
+                    playSound(game.sounds.paddle);
                     this.destroy();
                     return;
                 }
@@ -581,6 +589,7 @@
 
                 if (game.ball && !game.ball.attached && this.x < game.ball.x + game.ball.radius && this.x + this.width > game.ball.x - game.ball.radius && this.y < game.ball.y + game.ball.radius && this.y + this.height > game.ball.y - game.ball.radius) {
                     game.ball.velY = -Math.abs(game.ball.velY);
+                    playSound(game.sounds.paddle);
                     this.destroy();
                     return;
                 }
@@ -742,8 +751,10 @@
                 alien: document.getElementById('sndAlien'),
                 bomb: document.getElementById('sndBomb'),
                 pause: document.getElementById('sndPause'),
-				lifeLost: document.getElementById('sndLifeLost'),
+                lifeLost: document.getElementById('sndLifeLost'),
                 gameOver: document.getElementById('sndGameOver'),
+                shoot: document.getElementById('sndShoot'),
+                ready: document.getElementById('sndReady'),
                 bgMusic: document.getElementById('bgMusic')
             };
 
@@ -843,8 +854,9 @@
             game.lives = 3;
             game.level = 1;
             game.nextLifeScore = 5000;
-            game.bullet = null;
-            game.nextBulletTime = 0;
+           game.bullet = null;
+           game.nextBulletTime = 0;
+            game.prevBulletReady = false;
 
             game.sounds.bgMusic.currentTime = 0;
             if (!game.musicMuted) {
@@ -870,6 +882,7 @@
             game.particles = [];
             game.bullet = null;
             game.nextBulletTime = 0;
+            game.prevBulletReady = false;
             
             // Create paddle
             game.paddle = new Paddle(game.width/2 - 50, game.height - 30);
@@ -1034,6 +1047,7 @@
             if (!game.ball || game.ball.attached) return;
             if (game.bullet || Date.now() < game.nextBulletTime) return;
             game.bullet = new Bullet(game.paddle.x + game.paddle.width/2, game.paddle.y);
+            playSound(game.sounds.shoot);
         }
 
         function collectBomb(index) {
