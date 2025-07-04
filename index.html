@@ -237,6 +237,8 @@
             aliens: [],
             bombs: [],
             particles: [],
+            bullet: null,
+            nextBulletTime: 0,
             
             // Level settings
             alienRows: 5,
@@ -344,6 +346,13 @@
                 game.ctx.shadowBlur = 10;
                 game.ctx.fillRect(this.x, this.y, this.width, this.height);
                 game.ctx.shadowBlur = 0;
+
+                const ready = !game.bullet && Date.now() >= game.nextBulletTime;
+                game.ctx.fillStyle = ready ? "#ff8800" : "#ffffff";
+                const indW = 4, indH = 8;
+                const cx = this.x + this.width/2;
+                game.ctx.fillRect(cx - 6, this.y + 2, indW, indH);
+                game.ctx.fillRect(cx + 2, this.y + 2, indW, indH);
             }
         }
         
@@ -520,7 +529,69 @@
                 game.ctx.shadowBlur = 0;
             }
         }
-        
+
+        // Bullet class
+        class Bullet {
+            constructor(x, y) {
+                this.width = 4;
+                this.height = 10;
+                this.x = x - this.width/2;
+                this.y = y - this.height;
+                this.speed = 3;
+            }
+
+            destroy() {
+                game.bullet = null;
+                game.nextBulletTime = Date.now() + 500;
+            }
+
+            update() {
+                this.y -= this.speed;
+                if (this.y + this.height < 40) {
+                    this.destroy();
+                    return;
+                }
+
+                for (let i = game.aliens.length - 1; i >= 0; i--) {
+                    let alien = game.aliens[i];
+                    if (this.x < alien.x + alien.width && this.x + this.width > alien.x && this.y < alien.y + alien.height && this.y + this.height > alien.y) {
+                        game.score += alien.points;
+                        checkExtraLife();
+                        createParticles(alien.x + alien.width/2, alien.y + alien.height/2, alien.color);
+                        if (alien.type === 3) {
+                            game.bombs.push(new Bomb(alien.x, alien.y));
+                        }
+                        game.aliens.splice(i,1);
+                        playSound(game.sounds.alien);
+                        this.destroy();
+                        return;
+                    }
+                }
+
+                for (let i = game.bombs.length - 1; i >= 0; i--) {
+                    let bomb = game.bombs[i];
+                    if (this.x < bomb.x + bomb.width && this.x + this.width > bomb.x && this.y < bomb.y + bomb.height && this.y + this.height > bomb.y) {
+                        if (Date.now() - bomb.spawnTime >= 1000) {
+                            collectBomb(i);
+                        }
+                        this.destroy();
+                        return;
+                    }
+                }
+
+                if (game.ball && !game.ball.attached && this.x < game.ball.x + game.ball.radius && this.x + this.width > game.ball.x - game.ball.radius && this.y < game.ball.y + game.ball.radius && this.y + this.height > game.ball.y - game.ball.radius) {
+                    game.ball.velY = -Math.abs(game.ball.velY);
+                    this.destroy();
+                    return;
+                }
+            }
+
+            draw() {
+                game.ctx.fillStyle = "#ffffff";
+                game.ctx.fillRect(this.x, this.y, this.width, this.height);
+            }
+        }
+
         // Alien class
         class Alien {
             constructor(x, y, type) {
@@ -695,6 +766,8 @@
                         beginGame();
                     } else if (game.ball && game.ball.attached && !game.paused) {
                         game.ball.launch();
+                    } else if (game.running && !game.paused) {
+                        shootBullet();
                     }
                 } else if (lower === 'p') {
                     if (game.paused) {
@@ -770,6 +843,8 @@
             game.lives = 3;
             game.level = 1;
             game.nextLifeScore = 5000;
+            game.bullet = null;
+            game.nextBulletTime = 0;
 
             game.sounds.bgMusic.currentTime = 0;
             if (!game.musicMuted) {
@@ -793,6 +868,8 @@
             game.aliens = [];
             game.bombs = [];
             game.particles = [];
+            game.bullet = null;
+            game.nextBulletTime = 0;
             
             // Create paddle
             game.paddle = new Paddle(game.width/2 - 50, game.height - 30);
@@ -952,7 +1029,13 @@
                 game.ball.velY = 0;
             }
         }
-        
+
+        function shootBullet() {
+            if (!game.ball || game.ball.attached) return;
+            if (game.bullet || Date.now() < game.nextBulletTime) return;
+            game.bullet = new Bullet(game.paddle.x + game.paddle.width/2, game.paddle.y);
+        }
+
         function collectBomb(index) {
             // Remove bomb
             game.bombs.splice(index, 1);
@@ -1188,6 +1271,8 @@
                     beginGame();
                 } else if (game.ball && game.ball.attached && !game.paused) {
                     game.ball.launch();
+                } else if (game.running && !game.paused) {
+                    shootBullet();
                 }
             }
             game.prevAPressed = aPressed;
@@ -1254,6 +1339,7 @@
             // Update game objects
             game.paddle.update();
             game.ball.update();
+            if (game.bullet) game.bullet.update();
             updateAliens();
             updateParticles();
             
@@ -1262,6 +1348,7 @@
             // Draw everything
             game.paddle.draw();
             game.ball.draw();
+            if (game.bullet) game.bullet.draw();
             game.aliens.forEach(alien => alien.draw());
             game.bombs.forEach(bomb => bomb.draw());
             game.particles.forEach(particle => particle.draw());
