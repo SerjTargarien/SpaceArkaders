@@ -920,8 +920,14 @@
             // Create paddle
             game.paddle = new Paddle(game.width/2 - 50, game.height - 30);
             
-            // Create ball
-            game.ball = new Ball(game.width/2, game.height - 60);
+            // Create ball attached to paddle at start
+            game.ball = new Ball(game.paddle.x + game.paddle.width/2,
+                                 game.paddle.y);
+            game.ball.y = game.paddle.y - game.ball.radius;
+            game.ball.velX = 0;
+            game.ball.velY = 0;
+            game.ball.attached = true;
+            game.ball.startAutoLaunch();
             
             // Set level parameters - reduced speed increase
             game.alienSpeed = 0.15 + (game.level - 1) * 0.05; // Reduced from 0.1 to 0.05
