@@ -205,6 +205,7 @@
     <audio id="sndGameOver" src="assets/game-over.wav" preload="auto"></audio>
     <audio id="sndShoot" src="assets/laser-shoot.wav" preload="auto"></audio>
     <audio id="sndReady" src="assets/laser-ready.wav" preload="auto"></audio>
+    <audio id="sndDry" src="assets/laser-dry.wav" preload="auto"></audio>
 
     <script>
         // Game state
@@ -755,6 +756,7 @@
                 gameOver: document.getElementById('sndGameOver'),
                 shoot: document.getElementById('sndShoot'),
                 ready: document.getElementById('sndReady'),
+                dry: document.getElementById('sndDry'),
                 bgMusic: document.getElementById('bgMusic')
             };
 
@@ -1045,7 +1047,10 @@
 
         function shootBullet() {
             if (!game.ball || game.ball.attached) return;
-            if (game.bullet || Date.now() < game.nextBulletTime) return;
+            if (game.bullet || Date.now() < game.nextBulletTime) {
+                playSound(game.sounds.dry);
+                return;
+            }
             game.bullet = new Bullet(game.paddle.x + game.paddle.width/2, game.paddle.y);
             playSound(game.sounds.shoot);
         }
