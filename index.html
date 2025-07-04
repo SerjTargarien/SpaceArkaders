@@ -309,9 +309,14 @@
                 this.maxSpeed = 8; // Slightly higher top speed
                 this.acceleration = 0.5;
                 this.velX = 0;
+                this.recoilOffset = 0;
             }
             
             update() {
+                if (this.recoilOffset) {
+                    this.recoilOffset *= 0.8;
+                    if (Math.abs(this.recoilOffset) < 0.1) this.recoilOffset = 0;
+                }
                 if (Math.abs(game.padAxisX) > 0) {
                     const curve = Math.sign(game.padAxisX) * game.padAxisX * game.padAxisX;
                     this.velX = curve * this.maxSpeed;
@@ -342,13 +347,14 @@
             }
             
             draw() {
+                const y = this.y + this.recoilOffset;
                 game.ctx.fillStyle = '#00ff00';
-                game.ctx.fillRect(this.x, this.y, this.width, this.height);
+                game.ctx.fillRect(this.x, y, this.width, this.height);
                 
                 // Add glow effect
                 game.ctx.shadowColor = '#00ff00';
                 game.ctx.shadowBlur = 10;
-                game.ctx.fillRect(this.x, this.y, this.width, this.height);
+                game.ctx.fillRect(this.x, y, this.width, this.height);
                 game.ctx.shadowBlur = 0;
 
                 const ready = !game.bullet && Date.now() >= game.nextBulletTime;
@@ -359,8 +365,8 @@
                 game.ctx.fillStyle = ready ? "#ff8800" : "#ffffff";
                 const indW = 4, indH = 8;
                 const cx = this.x + this.width/2;
-                game.ctx.fillRect(cx - 6, this.y + 2, indW, indH);
-                game.ctx.fillRect(cx + 2, this.y + 2, indW, indH);
+                game.ctx.fillRect(cx - 6, y + 2, indW, indH);
+                game.ctx.fillRect(cx + 2, y + 2, indW, indH);
             }
         }
         
@@ -546,15 +552,28 @@
                 this.x = x - this.width/2;
                 this.y = y - this.height;
                 this.speed = 3;
+                this.trail = [];
+                this.hue = 40;
             }
 
             destroy() {
+                const color = `hsl(${this.hue},100%,70%)`;
+                createParticles(this.x + this.width/2, this.y, color);
+                this.trail.forEach(pos => {
+                    createParticles(pos.x + this.width/2, pos.y, color);
+                });
                 game.bullet = null;
                 game.nextBulletTime = Date.now() + 500;
             }
 
             update() {
+                this.trail.push({x: this.x, y: this.y});
+                if (this.trail.length > 6) {
+                    this.trail.shift();
+                }
+
                 this.y -= this.speed;
+                this.hue = (this.hue + 6) % 360;
                 if (this.y + this.height < 40) {
                     playSound(game.sounds.paddle);
                     this.destroy();
@@ -597,8 +616,22 @@
             }
 
             draw() {
-                game.ctx.fillStyle = "#ffffff";
+                // Trail
+                for (let i = 0; i < this.trail.length; i++) {
+                    let alpha = (i + 1) / this.trail.length * 0.4;
+                    game.ctx.globalAlpha = alpha;
+                    const color = `hsl(${this.hue},100%,70%)`;
+                    game.ctx.fillStyle = color;
+                    game.ctx.fillRect(this.trail[i].x, this.trail[i].y, this.width, this.height);
+                }
+                game.ctx.globalAlpha = 1;
+
+                const color = `hsl(${this.hue},100%,70%)`;
+                game.ctx.fillStyle = color;
+                game.ctx.shadowColor = color;
+                game.ctx.shadowBlur = 10;
                 game.ctx.fillRect(this.x, this.y, this.width, this.height);
+                game.ctx.shadowBlur = 0;
             }
         }
 
@@ -1052,6 +1085,7 @@
                 return;
             }
             game.bullet = new Bullet(game.paddle.x + game.paddle.width/2, game.paddle.y);
+            game.paddle.recoilOffset = 4;
             playSound(game.sounds.shoot);
         }
 
