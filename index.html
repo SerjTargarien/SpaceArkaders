@@ -351,10 +351,12 @@
                 game.ctx.fillStyle = '#00ff00';
                 game.ctx.fillRect(this.x, y, this.width, this.height);
                 
-                // Add glow effect
+                // Add subtle glow effect
                 game.ctx.shadowColor = '#00ff00';
-                game.ctx.shadowBlur = 10;
+                game.ctx.shadowBlur = 6;
+                game.ctx.globalAlpha = 0.7;
                 game.ctx.fillRect(this.x, y, this.width, this.height);
+                game.ctx.globalAlpha = 1;
                 game.ctx.shadowBlur = 0;
 
                 const ready = !game.bullet && Date.now() >= game.nextBulletTime;
