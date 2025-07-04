@@ -880,8 +880,6 @@
                 game.inputLoopId = null;
             }
 
-            // Clear any pending restart flag so the new game loop runs
-            game.restartPending = false;
 
             game.running = true;
             game.paused = false;
@@ -1175,7 +1173,7 @@
             game.sounds.bgMusic.pause();
             // If a game loop is active, flag it to stop on its next frame
             game.restartPending = game.running;
-            startGame();
+            requestAnimationFrame(startGame);
         }
 
         function pauseGame() {
